@@ -1,25 +1,25 @@
-### How to Run the Backend
+# How to Run the Backend
 
-#### Prerequisites
+## Prerequisites
 
-- Node.js (v14 or later)
-- npm (v6 or later)
-- MySQL (v8.2 or later)
+- Node.js (v14 or later) [installation steps](node-install.md)
+- npm (v6 or later) (it'll be already installed with Node.js)
+- MySQL (v8.2 or later) [installation steps](mysql-install.md)
 
-#### Setting Up `nodemon.json` Environment
+## Setting Up `nodemon.json` Environment
 
-1**Create a MySQL Database**:
+1. **Create a MySQL Database**:
 Create a MySQL database and note down the host, database name, port, username, and password.
 
-2**Run the database migration**:
+2. **Run the database migration**:
 Migrate the `database.sql` file.
 
-3**Create or Update `nodemon.json`**:
+3. **Create or Update `nodemon.json`**:
 Ensure you have a `nodemon.json` file in the root directory of your project. This file should contain the necessary
 environment variables for your application.
 
-   ```json
-   {
+```json
+{
 	"watch": [
 		"src"
 	],
@@ -47,7 +47,7 @@ environment variables for your application.
 }
 ```
 
-4 **Environment "Variables**":
+4. **Environment "Variables"**:
 
 - `PORT`: The port number on which the server will run.
 - `HOST`: The host of the MySQL database.
@@ -64,12 +64,17 @@ environment variables for your application.
 - `ADMIN_POOL_ID`: The pool ID of the admin user.
 - `ADMIN_CLIENT_ID`: The client ID of the admin user.
 - `SNS_ARN`: The ARN of the SNS topic.
-- `USE_MOCK_COGNITO`: Whatever hasn't aws services to use mock cognito.
+- `USE_MOCK_COGNITO`: Whatever hasn't aws services to use mock cognito. **true** or **false** in string.
 
-5 **Install Dependencies**: Run the following command to install the required dependencies:
-```    npm install    ```
+5. **Install Dependencies**: Run the following command to install the required dependencies:
 
-6 **Run the Server**:
+```shell
+npm install
+```
+
+6. **Run the Server**:
 Run the following command to start the server:
 
-```   npm run 'admin dev'   ```
+```shell
+npm run 'admin dev'   
+```
