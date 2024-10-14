@@ -29,10 +29,10 @@ environment variables for your application.
 		"NODE_ENV": "nodemon",
 		"PORT": 3000,
 		"HOST": "",
-		"DATABASE": "",
+		"DB_DATABASE": "",
 		"DB_PORT": "",
-		"USER": "",
-		"PASSWORD": "",
+		"DB_USER": "",
+		"DB_PASSWORD": "",
 		"PER_PAGE": 10,
 		"SERVICE_REGION": "ap-northeast-1",
 		"ACCESS_KEY": "",
@@ -51,10 +51,10 @@ environment variables for your application.
 
 - `PORT`: The port number on which the server will run.
 - `HOST`: The host of the MySQL database.
-- `DATABASE`: The name of the MySQL database.
+- `DB_DATABASE`: The name of the MySQL database.
 - `DB_PORT`: The port of the MySQL database.
-- `USER`: The username of the MySQL database.
-- `PASSWORD`: The password of the MySQL database.
+- `DB_USER`: The username of the MySQL database.
+- `DB_PASSWORD`: The password of the MySQL database.
 - `PER_PAGE`: The number of items to display per page.
 - `SERVICE_REGION`: The region of the AWS service.
 - `ACCESS_KEY`: The access key of the AWS service.
@@ -76,5 +76,11 @@ npm install
 Run the following command to start the server:
 
 ```shell
-npm run 'admin dev'   
+npm run 'admin dev'
 ```
+
+7. **Login Credentials**:
+Use the following credentials to log in:
+
+  - **Email**: `admin@gmail.com`
+  - **Password**: `password`

@@ -10,8 +10,8 @@ interface User {
 const sub_id = "1";
 
 const mockDatabase: { [email: string]: User } = {
-  "firdavsgaybullayev22@gmail.com": {
-    email: "firdavsgaybullayev22@gmail.com",
+  "admin@gmail.com": {
+    email: "admin@gmail.com",
     accessToken: "mockAccessToken",
     refreshToken: "mockRefreshToken",
     password: "password",
