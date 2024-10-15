@@ -209,10 +209,10 @@ INSERT INTO
 VALUES
     (
         '1',
-        'firdavsgaybullayev22@gmail.com',
-        '1234567890',
-        'Firdavs',
-        'Gaybullayev',
+        'admin@gmail.com',
+        'password',
+        'Admin',
+        '',
         1,
         JSON_OBJECT ()
     );

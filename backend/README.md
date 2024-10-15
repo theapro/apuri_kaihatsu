@@ -27,7 +27,7 @@ environment variables for your application.
 	"exec": "npx ts-node src/index.ts",
 	"env": {
 		"NODE_ENV": "nodemon",
-		"PORT": 3000,
+		"PORT": 3001,
 		"HOST": "",
 		"DB_DATABASE": "",
 		"DB_PORT": "",
