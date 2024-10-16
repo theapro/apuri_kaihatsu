@@ -106,7 +106,12 @@ export default function CreateParent() {
       </div>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit((values) => mutate(values as any))}
+          onSubmit={form.handleSubmit((values) =>
+            mutate({
+              ...values,
+              students: selectedStudents.map(Number) ?? [],
+            } as any)
+          )}
           className="space-y-4"
         >
           <div className="flex w-full">
