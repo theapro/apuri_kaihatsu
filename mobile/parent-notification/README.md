@@ -16,6 +16,10 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
     npx expo start
    ```
 
+3. Change the environment variables in the `.env` file to your backend server's URL, with server's computer IP address and port number.
+For Windows, you can find the IP address by running `ipconfig` in the command prompt. For Mac and Linux, you can find the IP address by running `ifconfig` in the terminal.
+
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

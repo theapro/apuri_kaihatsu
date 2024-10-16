@@ -12,7 +12,11 @@
 Create a MySQL database and note down the host, database name, port, username, and password.
 
 2. **Run the database migration**:
-Migrate the `database.sql` file.
+Migrate the `database.sql` file. For example, if you have MySQL installed, you can run the following command:
+
+```shell
+mysql -u root -p < database.sql
+```
 
 3. **Create or Update `nodemon.json`**:
 Ensure you have a `nodemon.json` file in the root directory of your project. This file should contain the necessary
@@ -46,6 +50,38 @@ environment variables for your application.
 	}
 }
 ```
+Example of `nodemon.json` file:
+
+```json
+{
+  "watch": [
+    "src"
+  ],
+  "ext": "ts,json",
+  "exec": "npx ts-node src/index.ts",
+  "env": {
+    "NODE_ENV": "nodemon",
+    "PORT": 3000,
+    "HOST": "localhost",
+    "DB_DATABASE": "Parents",
+    "DB_PORT": "3306",
+    "DB_USER": "root",
+    "DB_PASSWORD": "password",
+    "PER_PAGE": 10,
+    "SERVICE_REGION": "ap-northeast-1",
+    "ACCESS_KEY": "access_key",
+    "SECRET_ACCESS_KEY": "secret_access_key",
+    "PARENT_POOL_ID": "parent_pool_id",
+    "PARENT_CLIENT_ID": "parent_client_id",
+    "ADMIN_POOL_ID": "admin_pool_id",
+    "ADMIN_CLIENT_ID": "admin_client_id",
+        "SNS_ARN": "sns_arn",
+    "USE_MOCK_COGNITO": "true"
+  }
+}
+```
+**Warning**: Use different PORTS for admin-panel-backend and mobile-backend.
+Best practice is to use 3000 for admin-panel-backend and 3002 for mobile-backend.
 
 4. **Environment "Variables"**:
 
@@ -74,9 +110,13 @@ npm install
 
 6. **Run the Server**:
 Run the following command to start the server:
-
+For admin-panel-backend:
 ```shell
 npm run 'admin dev'
+```
+For mobile-backend:
+```shell
+npm run 'mobile dev'
 ```
 
 7. **Login Credentials**:

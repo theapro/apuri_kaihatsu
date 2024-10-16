@@ -1,8 +1,7 @@
 import multer from 'multer';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
-// import iconv from 'iconv-lite';
-import * as Encoding from 'encoding-japanese';
+import iconv from 'iconv-lite';
 import { IController } from '../utils/icontroller';
 import { ExtendedRequest, verifyToken } from '../middlewares/auth'
 import express, { Response, Router } from "express";
@@ -15,10 +14,10 @@ import {
     isValidStudentNumber,
     isValidEmail,
     isValidArrayId,
-    isValidId,
-    detectAndDecodeContent
+    isValidId
 } from '../utils/validate'
 import process from "node:process";
+import { stringify } from 'csv-stringify/sync';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -60,12 +59,18 @@ class StudentController implements IController {
                 }).end();
             }
 
-            const csvHeaders = ['email', 'phone_number', 'given_name', 'family_name', 'student_number'];
-            const csvRows = students.map((student: any) =>
-                `${student.email},${student.phone_number},${student.given_name},${student.family_name},${student.student_number}`
-            );
+            const csvData = students.map((student: any) => ({
+                email: student.email,
+                phone_number: student.phone_number,
+                given_name: student.given_name,
+                family_name: student.family_name,
+                student_number: student.student_number
+            }));
 
-            const csvContent = [csvHeaders.join(','), ...csvRows].join('\n');
+            const csvContent = stringify(csvData, {
+                header: true,
+                columns: ['email', 'phone_number', 'given_name', 'family_name', 'student_number']
+            });
 
             res.header('Content-Type', 'text/csv; charset=utf-8');
             res.header('Content-Disposition', 'attachment; filename=students.csv');
@@ -97,17 +102,7 @@ class StudentController implements IController {
                 }).end();
             }
 
-            // // const stream = Readable.from(iconv.decode(req.file.buffer, 'Shift_JIS'))
-            // const encoding = Encoding.detect(req.file.buffer);
-            // const decodedBuffer = Encoding.convert(req.file.buffer, {
-            //     // @ts-ignore
-            //     from: encoding,
-            //     to: 'UNICODE',
-            //     type: 'string'
-            // });
-            // const stream = Readable.from(decodedBuffer);
-
-            const decodedContent = await detectAndDecodeContent(req.file.buffer);
+            const decodedContent = await iconv.decode(req.file.buffer, 'UTF-8');
             const stream = Readable.from(decodedContent)
 
             await new Promise((resolve, reject) => {
@@ -118,7 +113,6 @@ class StudentController implements IController {
                             headers[0] = headers[0].slice(1);
                         }
                         headers = headers.map((header: string) => header.trim());
-                        console.log('CSV Headers:', headers);
                     })
                     .on('data', (data: any) => {
                         if (Object.values(data).some((value: any) => value.trim() !== '')) {
@@ -128,10 +122,10 @@ class StudentController implements IController {
                     .on('end', resolve)
                     .on('error', reject);
             });
-            console.log('CSV Rows:', results);
 
             const validResults: any[] = []
             const existingEmailsInCSV: string[] = []
+            const existingStudentNumbersInCSV: string[] = []
             for (const row of results) {
                 const { email, phone_number, given_name, family_name, student_number } = row;
                 const rowErrors: any = {};
@@ -149,6 +143,9 @@ class StudentController implements IController {
                 if (existingEmailsInCSV.includes(normalizedEmail)) {
                     rowErrors.email = 'This email already exists'
                 }
+                if (existingStudentNumbersInCSV.includes(normalizedStudent)) {
+                    rowErrors.student_number = 'This student number already exists'
+                }
 
                 if (Object.keys(rowErrors).length > 0) {
                     errors.push({ row, errors: rowErrors });
@@ -159,6 +156,7 @@ class StudentController implements IController {
                     row.family_name = normalizedFamily
                     row.student_number = normalizedStudent
                     existingEmailsInCSV.push(row.email)
+                    existingStudentNumbersInCSV.push(row.student_number)
 
                     validResults.push(row);
                 }
@@ -178,12 +176,18 @@ class StudentController implements IController {
             const existingStudents = await DB.query('SELECT email FROM Student WHERE email IN (:emails)', {
                 emails,
             });
+            const existingStudentsNumbers = await DB.query('SELECT student_number FROM Student WHERE student_number IN (:studentNumbers)', {
+                studentNumbers: validResults.map(row => row.student_number)
+            });
+            const existingStudentNumbers = existingStudentsNumbers.map((student: any) => student.student_number);
             const existingEmails = existingStudents.map((student: any) => student.email);
 
             if (action === 'create') {
                 for (const row of validResults) {
                     if (existingEmails.includes(row.email)) {
-                        errors.push({ row, errors: { email: 'Student already exists' } });
+                        errors.push({ row, errors: { email: 'Student\'s email already exists' } });
+                    } else if (existingStudentNumbers.includes(row.student_number)) {
+                        errors.push({ row, errors: { student_number: 'Student\s student number already exists' } });
                     } else {
                         await DB.execute(
                             `INSERT INTO Student(email, phone_number, given_name, family_name, student_number, school_id)
@@ -241,12 +245,17 @@ class StudentController implements IController {
             if (errors.length > 0) {
                 let csvFile: Buffer | null = null;
                 if (withCSVBool) {
-                    const csvHeaders = ['email', 'phone_number', 'given_name', 'family_name', 'student_number'];
-                    const csvRows = errors.map((error: any) =>
-                        `${error?.row?.email},${error?.row?.phone_number},${error?.row?.given_name},${error?.row?.family_name},${error?.row?.student_number}`
-                    );
-
-                    const csvContent = [csvHeaders.join(','), ...csvRows].join('\n');
+                    const csvData = errors.map((error: any) => ({
+                        email: error?.row?.email,
+                        phone_number: error?.row?.phone_number,
+                        given_name: error?.row?.given_name,
+                        family_name: error?.row?.family_name,
+                        student_number: error?.row?.student_number
+                    }));
+                    const csvContent = stringify(csvData, {
+                        header: true,
+                        columns: ['email', 'phone_number', 'given_name', 'family_name', 'student_number']
+                    });
                     // response headers for sending multipart files to send it with json response
                     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
                     res.setHeader('Content-Disposition', 'attachment; filename=errors.csv');

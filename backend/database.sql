@@ -191,47 +191,11 @@ CREATE TABLE `StudentParent` (
     CONSTRAINT `StudentParent_ibfk_2` FOREIGN KEY (`parent_id`) REFERENCES `Parent` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 65 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
-INSERT INTO
-    `School` (`id`, `name`, `contact_email`)
-VALUES
-    (1, 'New School', 'contact@newschool.com');
+INSERT INTO `School` (`id`,`name`, `contact_email`)
+VALUES (1,'New School', 'contact@newschool.com');
 
-INSERT INTO
-    `Admin` (
-        `cognito_sub_id`,
-        `email`,
-        `phone_number`,
-        `given_name`,
-        `family_name`,
-        `school_id`,
-        `permissions`
-    )
-VALUES
-    (
-        '1',
-        'firdavsgaybullayev22@gmail.com',
-        '1234567890',
-        'Firdavs',
-        'Gaybullayev',
-        1,
-        JSON_OBJECT ()
-    );
+INSERT INTO `Admin` (`cognito_sub_id`, `email`, `phone_number`, `given_name`, `family_name`, `school_id`, `permissions`)
+VALUES ('1', 'admin@gmail.com', '1234567890', 'Firdavs', 'Gaybullayev', 1, JSON_OBJECT());
 
-INSERT INTO
-    `Student` (
-        `email`,
-        `phone_number`,
-        `given_name`,
-        `family_name`,
-        `student_number`,
-        `school_id`
-    )
-VALUES
-    (
-        '1',
-        'firdavsgaybullayev22@gmail.com',
-        '1234567890',
-        'Firdavs',
-        'Gaybullayev',
-        1
-    );
+INSERT INTO `Student` (`email`, `phone_number`, `given_name`, `family_name`, `student_number`, `school_id`)
+VALUES ('1', 'admin@gmail.com', '1234567890', 'Firdavs', 'Gaybullayev', 1);

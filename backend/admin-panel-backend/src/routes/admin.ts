@@ -3,13 +3,15 @@ import { ExtendedRequest, verifyToken } from '../middlewares/auth'
 import express, { Response, Router } from "express";
 import { Admin } from '../utils/cognito-client'
 import DB from '../utils/db-client'
-import { detectAndDecodeContent, isValidEmail, isValidId, isValidPhoneNumber, isValidString } from "../utils/validate";
+import iconv from 'iconv-lite';
+import { isValidEmail, isValidId, isValidPhoneNumber, isValidString } from "../utils/validate";
 import process from "node:process";
 import { generatePaginationLinks } from "../utils/helper";
 import { MockCognitoClient } from '../utils/mock-cognito-client';
 import multer from 'multer';
 import { Readable } from 'node:stream';
 import csv from 'csv-parser';
+import { stringify } from 'csv-stringify/sync';
 
 
 const storage = multer.memoryStorage();
@@ -48,12 +50,17 @@ class AdminController implements IController {
                 }).end();
             }
 
-            const csvHeaders = ['email', 'phone_number', 'given_name', 'family_name'];
-            const csvRows = admins.map((admin: any) =>
-                `${admin.email},${admin.phone_number},${admin.given_name},${admin.family_name}`
-            );
+            const csvData = admins.map((admin: any) => ({
+                email: admin.email,
+                phone_number: admin.phone_number,
+                given_name: admin.given_name,
+                family_name: admin.family_name,
+            }));
 
-            const csvContent = [csvHeaders.join(','), ...csvRows].join('\n');
+            const csvContent = stringify(csvData, {
+                header: true,
+                columns: ['email', 'phone_number', 'given_name', 'family_name']
+            });
 
             res.setHeader('Content-Disposition', 'attachment; filename="admins.csv"');
             res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -85,7 +92,7 @@ class AdminController implements IController {
                 }).end();
             }
 
-            const decodedContent = await detectAndDecodeContent(req.file.buffer);
+            const decodedContent = await iconv.decode(req.file.buffer, 'UTF-8');
 
             const stream = Readable.from(decodedContent)
             await new Promise((resolve, reject) => {
@@ -213,12 +220,16 @@ class AdminController implements IController {
             if (errors.length > 0) {
                 let csvFile: Buffer | null = null;
                 if (withCSVBool) {
-                    const csvHeaders = ['email', 'phone_number', 'given_name', 'family_name'];
-                    const csvRows = errors.map((error: any) =>
-                        `${error?.row?.email},${error?.row?.phone_number},${error?.row?.given_name},${error?.row?.family_name}`
-                    );
-
-                    const csvContent = [csvHeaders.join(','), ...csvRows].join('\n');
+                    const csvData = errors.map((error: any) => ({
+                        email: error?.row?.email,
+                        phone_number: error?.row?.phone_number,
+                        given_name: error?.row?.given_name,
+                        family_name: error?.row?.family_name
+                    }));
+                    const csvContent = stringify(csvData, {
+                        header: true,
+                        columns: ['email', 'phone_number', 'given_name', 'family_name']
+                    });
                     // response headers for sending multipart files to send it with json response
                     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
                     res.setHeader('Content-Disposition', 'attachment; filename=errors.csv');

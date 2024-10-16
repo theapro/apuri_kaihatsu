@@ -1,6 +1,6 @@
 # Parents Monolithic Frontend
 
-This project is an admin panel for sending notifications to parents mobile phone. 
+This project is an admin panel for sending notifications to parents mobile phone.
 ## Table of Contents
 
 - [Overview](#overview)
@@ -43,6 +43,7 @@ AUTH_SECRET=your_secret_key
 AUTH_URL=http://localhost:3000
 BACKEND_URL=http://localhost:3001
 NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+NEXT_PUBLIC_CALLIBRATE_HOURS=0
 ```
 
 3. To create a secret key type this in the terminal:

@@ -1,10 +1,18 @@
-import {IController} from '../utils/icontroller';
-import {ExtendedRequest, verifyToken} from '../middlewares/auth'
-import express, {NextFunction, Request, Response, Router} from "express";
-import {generatePaginationLinks} from '../utils/helper'
+import { IController } from '../utils/icontroller';
+import { ExtendedRequest, verifyToken } from '../middlewares/auth'
+import express, { NextFunction, Request, Response, Router } from "express";
+import { generatePaginationLinks } from '../utils/helper'
 import DB from '../utils/db-client'
-import {isValidString, isValidId, isValidArrayId} from '../utils/validate'
+import { isValidString, isValidId, isValidArrayId } from '../utils/validate'
 import process from "node:process";
+import { stringify } from 'csv-stringify/sync';
+import multer from 'multer';
+import { Readable } from 'node:stream';
+import csv from 'csv-parser';
+import iconv from 'iconv-lite';
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 class GroupController implements IController {
     public router: Router = express.Router();
@@ -17,10 +25,271 @@ class GroupController implements IController {
         this.router.post('/group/create', verifyToken, this.createGroup)
         this.router.get('/group/list', verifyToken, this.groupFilter)
         this.router.post('/group/ids', verifyToken, this.groupByIds)
+        this.router.post('/group/upload', verifyToken, upload.single('file'), this.uploadGroupsFromCSV);
+        this.router.get('/group/export', verifyToken, this.exportGroupsToCSV);
 
         this.router.get('/group/:id', verifyToken, this.groupView)
         this.router.delete('/group/:id', verifyToken, this.groupDelete)
         this.router.put('/group/:id', verifyToken, this.groupEdit)
+    }
+
+    exportGroupsToCSV = async (req: ExtendedRequest, res: Response) => {
+        try {
+            const groups = await DB.query(`SELECT
+                id, name
+                FROM StudentGroup
+                WHERE school_id = :school_id`, {
+                school_id: req.user.school_id
+            });
+
+            if (groups.length === 0) {
+                return res.status(404).json({
+                    error: 'No groups found'
+                }).end();
+            }
+
+            for (const group of groups) {
+                const memberList = await DB.query(`SELECT 
+                    st.student_number
+                    FROM GroupMember AS gm
+                    INNER JOIN Student as st ON gm.student_id = st.id
+                    WHERE gm.group_id = :group_id`, {
+                    group_id: group.id
+                })
+                group.student_numbers = memberList.map((member: any) => member.student_number);
+            }
+
+            const csvData = groups.map((group: any) => ({
+                name: group.name,
+                student_numbers: group.student_numbers.join(', ')
+            }));
+
+            const csvContent = stringify(csvData, {
+                header: true,
+                columns: ['name', 'student_numbers']
+            });
+
+            res.setHeader('Content-Disposition', 'attachment; filename="groups.csv"');
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.send(Buffer.from('\uFEFF' + csvContent, 'utf-8'));
+        } catch (e: any) {
+            return res.status(500).json({
+                error: 'Internal server error',
+                details: e.message
+            }).end();
+        }
+    }
+
+    uploadGroupsFromCSV = async (req: ExtendedRequest, res: Response) => {
+        const { throwInError, action, withCSV } = req.body
+        const throwInErrorBool = throwInError === 'true'
+        const withCSVBool = withCSV === 'true'
+        const results: any[] = []
+        const errors: any[] = []
+        const inserted: any[] = []
+        const updated: any[] = []
+        const deleted: any[] = []
+        try {
+            if (!req.file || !req.file.buffer) {
+                return res.status(400).json({
+                    error: 'Bad Request',
+                    details: 'File is missing or invalid'
+                }).end()
+            }
+            const decodedContent = await iconv.decode(req.file.buffer, 'UTF-8')
+            const stream = Readable.from(decodedContent)
+            await new Promise((resolve, reject) => {
+                stream
+                    .pipe(csv())
+                    .on('headers', (headers: any) => {
+                        if (headers[0].charCodeAt(0) === 0xFEFF) {
+                            headers[0] = headers[0].substring(1)
+                        }
+                    })
+                    .on('data', (data: any) => {
+                        if (Object.values(data).some((value: any) => value.trim() !== '')) {
+                            results.push(data)
+                        }
+                    })
+                    .on('end', resolve)
+                    .on('error', reject)
+            })
+            const validResults: any[] = []
+            const existingGroupIdsInCSV: string[] = []
+            for (const row of results) {
+                const { name, student_numbers } = row
+                const rowErrors: any = {}
+                const normalizedName = String(name).trim()
+                const normalizedStudentNumbers = String(student_numbers).split(',').map(item => item.trim())
+                if (!isValidString(normalizedName) && normalizedName.length > 1) rowErrors.name = 'Invalid name'
+                if (existingGroupIdsInCSV.includes(normalizedName)) {
+                    rowErrors.name = 'This group name already exists'
+                }
+                if (Object.keys(rowErrors).length > 0) {
+                    errors.push({ row, errors: rowErrors })
+                } else {
+                    row.name = normalizedName
+                    row.student_numbers = normalizedStudentNumbers
+                    existingGroupIdsInCSV.push(row.name)
+                    validResults.push(row)
+                }
+            }
+            if (errors.length > 0 && throwInErrorBool) {
+                return res.status(400).json({ errors: errors }).end()
+            }
+            const groupNames = validResults.map(row => row.name)
+            if (groupNames.length === 0) {
+                return res.status(400).json({
+                    errors: errors,
+                    message: 'All data invalid'
+                }).end()
+            }
+            const existingGroups = await DB.query('SELECT name FROM StudentGroup WHERE name IN (:groupNames)', {
+                groupNames,
+            })
+            const existingGroupNames = existingGroups.map((group: any) => group.name)
+            if (action === 'create') {
+                for (const row of validResults) {
+                    if (existingGroupNames.includes(row.name)) {
+                        errors.push({ row, errors: { name: 'Group already exists' } })
+                    } else {
+                        const groupInsert = await DB.execute(
+                            `INSERT INTO StudentGroup(name, created_at, school_id)
+                            VALUE (:name, NOW(), :school_id);`, {
+                            name: row.name,
+                            school_id: req.user.school_id,
+                        })
+                        const groupId = groupInsert.insertId
+                        const attachedMembers: any[] = [];
+                        if (row.student_numbers && Array.isArray(row.student_numbers) && row.student_numbers.length > 0) {
+                            const studentRows = await DB.query(`SELECT id
+                                    FROM Student WHERE student_number IN (:students)
+                                    GROUP BY id`, {
+                                students: row.student_numbers
+                            })
+
+                            if (studentRows.length > 0) {
+                                const values = studentRows.map((student: any) => `(${groupId}, ${student.id})`).join(', ');
+                                await DB.execute(`INSERT INTO GroupMember (group_id, student_id) VALUES ${values}`);
+
+                                const studentList = await DB.query(`SELECT st.id,st.given_name, st.family_name
+                                        FROM Student as st
+                                        INNER JOIN GroupMember as gm
+                                        ON gm.student_id = st.id AND gm.group_id = :group_id`, {
+                                    group_id: groupId,
+                                })
+
+                                attachedMembers.push(...studentList);
+                            } else {
+                                errors.push({ row, errors: { student_numbers: 'Invalid student numbers' } });
+                            }
+                        }
+                        inserted.push({ ...row, members: attachedMembers })
+                    }
+                }
+            } else if (action === 'update') {
+                for (const row of validResults) {
+                    if (!existingGroupNames.includes(row.name)) {
+                        errors.push({ row, errors: { name: 'Group does not exist' } })
+                    } else {
+                        await DB.execute(
+                            `UPDATE StudentGroup SET
+                            name = :name
+                            WHERE name = :name`, {
+                            name: row.name,
+                        })
+
+                        const group = await DB.query(`SELECT id FROM StudentGroup WHERE name = :name`, {
+                            name: row.name,
+                        })
+                        const groupId = group[0].id;
+                        const attachedMembers: any[] = [];
+                        if (row.student_numbers && Array.isArray(row.student_numbers) && row.student_numbers.length > 0) {
+                            const studentRows = await DB.query(`SELECT id
+                                    FROM Student WHERE student_number IN (:students)
+                                    GROUP BY id`, {
+                                students: row.student_numbers
+                            })
+
+                            if (studentRows.length > 0) {
+                                await DB.execute(`DELETE FROM GroupMember WHERE group_id = :group_id`, {
+                                    group_id: groupId,
+                                })
+
+                                const values = studentRows.map((student: any) => `(${groupId}, ${student.id})`).join(', ');
+                                await DB.execute(`INSERT INTO GroupMember (group_id, student_id) VALUES ${values}`);
+
+                                const studentList = await DB.query(`SELECT st.id,st.given_name, st.family_name
+                                        FROM Student as st
+                                        INNER JOIN GroupMember as gm
+                                        ON gm.student_id = st.id AND gm.group_id = :group_id`, {
+                                    group_id: groupId,
+                                })
+
+                                attachedMembers.push(...studentList);
+                            } else {
+                                errors.push({ row, errors: { student_numbers: 'Invalid student numbers' } });
+                            }
+                        }
+
+                        updated.push({ ...row, members: attachedMembers })
+                    }
+                }
+            } else if (action === 'delete') {
+                for (const row of validResults) {
+                    if (!existingGroupNames.includes(row.name)) {
+                        errors.push({ row, errors: { name: 'Group does not exist' } })
+                    } else {
+                        await DB.execute('DELETE FROM StudentGroup WHERE name = :name AND school_id = :school_id', {
+                            name: row.name,
+                            school_id: req.user.school_id,
+                        })
+                        deleted.push(row)
+                    }
+                }
+            } else {
+                return res.status(400).json({
+                    error: 'Bad Request',
+                    details: 'Invalid action'
+                }).end()
+            }
+            if (errors.length > 0) {
+                let csvFile: Buffer | null = null
+                if (withCSVBool) {
+                    const csvData = errors.map((error: any) => ({
+                        name: error?.row?.name,
+                        student_numbers: error?.row?.student_numbers.join(", ")
+                    }))
+                    const csvContent = stringify(csvData, {
+                        header: true,
+                        columns: ['name', 'student_numbers']
+                    })
+                    // response headers for sending multipart files to send it with json response
+                    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+                    res.setHeader('Content-Disposition', 'attachment; filename=errors.csv')
+                    csvFile = Buffer.from('\uFEFF' + csvContent, 'utf-8')
+                }
+                return res.status(400).json({
+                    message: 'CSV processed successfully but with errors',
+                    inserted: inserted,
+                    updated: updated,
+                    deleted: deleted,
+                    errors: errors.length > 0 ? errors : null,
+                    csvFile: csvFile,
+                }).end()
+            }
+            return res.status(200).json({
+                message: 'CSV processed successfully',
+                inserted: inserted,
+                updated: updated,
+                deleted: deleted,
+            }).end()
+        } catch (e: any) {
+            return res.status(500).json({
+                error: 'Internal server error',
+                details: e.message
+            }).end()
+        }
     }
 
     groupEdit = async (req: ExtendedRequest, res: Response) => {
@@ -169,7 +438,7 @@ class GroupController implements IController {
 
     groupByIds = async (req: ExtendedRequest, res: Response) => {
         try {
-            const {groupIds} = req.body
+            const { groupIds } = req.body
 
             if (groupIds && Array.isArray(groupIds) && isValidArrayId(groupIds)) {
                 const groupList = await DB.query(`SELECT id,name FROM StudentGroup 
@@ -375,9 +644,9 @@ class GroupController implements IController {
             const groupInsert = await DB.execute(
                 `INSERT INTO StudentGroup(name, created_at, school_id) 
                         VALUE (:name, NOW(), :school_id);`, {
-                    name: name,
-                    school_id: req.user.school_id,
-                });
+                name: name,
+                school_id: req.user.school_id,
+            });
 
             const groupId = groupInsert.insertId;
             const attachedMembers: any[] = [];
