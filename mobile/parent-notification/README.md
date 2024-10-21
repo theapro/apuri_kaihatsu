@@ -340,6 +340,12 @@ You'll see options to run the app:
 - **iOS simulator**
 - **Expo Go app** on your physical device
 
+Use the following credentials to log in to the mobile app:
+
+  - **Email**: `parent@gmail.com`
+  - **Password**: `password`
+
+
 ## Building the App
 
 You can build the app locally for Android or use Expo Application Services (EAS) to build it online.
