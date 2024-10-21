@@ -34,7 +34,7 @@ export default {
     /*form page*/
     form_message: "Please submit applications by the 8:30 of that day",
     reason: "Reason for application",
-    absense: "absense",
+    absence: "absence",
     lateness: "lateness",
     leaving: "leaving",
     other: "other",
@@ -105,7 +105,7 @@ export default {
     /*form page*/
     form_message: "その日の8:30までに申請を提出してください",
     reason: "申請理由",
-    absense: "欠席",
+    absence: "欠席",
     lateness: "遅刻",
     leaving: "早退",
     other: "その他",
@@ -176,7 +176,7 @@ export default {
     /*form page*/
     form_message: "Ushbu kun soat 8:30 gacha arizalarni topshiring",
     reason: "Ariza sababi",
-    absense: "dars qoldirish",
+    absence: "dars qoldirish",
     lateness: "darsga kechikish",
     leaving: "erta ketish",
     other: "boshqa sabab",
@@ -218,19 +218,19 @@ export default {
 
 export const reasonMapping: { [key in Language]: { [key: string]: string } } = {
   en: {
-    absense: "absense",
+    absence: "absence",
     lateness: "lateness",
     leaving: "leaving early",
     other: "other",
   },
   ja: {
-    absense: "欠席",
+    absence: "欠席",
     lateness: "遅刻",
     leaving: "早退",
     other: "その他",
   },
   uz: {
-    absense: "dars qoldirish",
+    absence: "dars qoldirish",
     lateness: "darsga kechikish",
     leaving: "erta ketish",
     other: "boshqa sabab",

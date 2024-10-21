@@ -80,7 +80,7 @@ Example of `nodemon.json` file:
   }
 }
 ```
-**Warning**: Use different PORTS for admin-panel-backend and mobile-backend.
+**Warning**: You can use single nodemon.json files for both admin-panel-backend and mobile-backend, but use different PORTS for admin-panel-backend and mobile-backend.
 Best practice is to use 3000 for admin-panel-backend and 3002 for mobile-backend.
 
 4. **Environment "Variables"**:
@@ -120,7 +120,12 @@ npm run 'mobile dev'
 ```
 
 7. **Login Credentials**:
-Use the following credentials to log in:
+Use the following credentials to log in to admin panel:
 
   - **Email**: `admin@gmail.com`
+  - **Password**: `password`
+
+Use the following credentials to log in to the mobile app:
+
+  - **Email**: `parent@gmail.com`
   - **Password**: `password`

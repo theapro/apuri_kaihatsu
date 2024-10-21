@@ -35,7 +35,7 @@ export interface I18nContextType {
 
       form_message: string;
       reason: string;
-      absense: string;
+      absence: string;
       lateness: string;
       leaving: string;
       other: string;

@@ -25,14 +25,15 @@ export default function TabTwoScreen() {
   const { language, i18n } = useContext(I18nContext);
   const { students } = useStudents();
   const { session } = useSession();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
   const theme = useColorScheme() ?? "light";
   const [activeStudent, setActiveStudent] = useState<Student | null>();
-  const [activeReason, setActiveReason] = useState("absense");
+  const [activeReason, setActiveReason] = useState("absence");
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [text, setText] = useState("");
   const translatedButtons = [
-    { key: "absense", label: i18n[language].absense },
+    { key: "absence", label: i18n[language].absence },
     { key: "lateness", label: i18n[language].lateness },
     { key: "leaving", label: i18n[language].leaving },
     { key: "other", label: i18n[language].other },
@@ -63,19 +64,15 @@ export default function TabTwoScreen() {
       date: date.toISOString().split("T")[0],
       student_id: activeStudent?.id,
     };
-
-    fetch(
-      "https://e45np4n3jb.execute-api.ap-northeast-1.amazonaws.com/api/create/forms",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${session}`,
-        },
-        body: JSON.stringify(formData),
+    fetch(`${apiUrl}/create/forms`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${session}`,
       },
-    )
+      body: JSON.stringify(formData),
+    })
       .then((response) => response.json())
       .then((data) => {
         Toast.show(`${data.message}`, {

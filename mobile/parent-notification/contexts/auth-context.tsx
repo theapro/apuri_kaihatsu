@@ -6,6 +6,7 @@ import { Session } from "@/constants/types";
 import { useSQLiteContext } from "expo-sqlite";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-root-toast";
+import { LogBox } from "react-native";
 
 const AuthContext = React.createContext<{
   signIn: (email: string, password: string) => Promise<any>;
@@ -58,7 +59,6 @@ export function SessionProvider(props: React.PropsWithChildren) {
           await AsyncStorage.setItem("email", email);
           await AsyncStorage.setItem("password", password);
           try {
-            const token = await getExpoPushToken();
             const response = await fetch(`${apiUrl}/login`, {
               method: "POST",
               headers: {
@@ -67,7 +67,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
               body: JSON.stringify({
                 email,
                 password,
-                token,
+                token: "",
               }),
             });
             if (response.status === 403) {
