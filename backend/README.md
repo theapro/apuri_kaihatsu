@@ -5,6 +5,7 @@
 - Node.js (v14 or later) [installation steps](node-install.md)
 - npm (v6 or later) (it'll be already installed with Node.js)
 - MySQL (v8.2 or later) [installation steps](mysql-install.md)
+- Learn how to set up push notifications [firebase and expo setup](push-notification.md)
 
 ## Setting Up `nodemon.json` Environment
 
