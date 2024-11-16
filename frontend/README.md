@@ -32,32 +32,22 @@ In this application you can send messages to parents and receive forms from the 
 
 1. Install dependencies:
 
-```bash
-npm install
-```
-
-2. Set up environment variables by creating a `.env.local` file like `.env.example`:
-
-```dotenv
-AUTH_SECRET=your_secret_key
-AUTH_URL=http://localhost:3000
-BACKEND_URL=http://localhost:3001
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
-NEXT_PUBLIC_CALLIBRATE_HOURS=0
-```
-
-3. To create a secret key type this in the terminal:
-
-```bash
-npm exec auth secret
-```
+    ```bash
+    npm install
+    ```
+2. To create a secret key type this in the terminal:
+  
+    ```bash
+    npm exec auth secret
+    ```
 
 ## Usage
 
 1. Run the development server:
+  
+    ```bash
+    npm run dev
+    ```
 
-```bash
-npm run dev
-```
+2. Happy coding!
 
-2. Open http://localhost:3000 with your browser to see the result.

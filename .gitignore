@@ -1,6 +1,5 @@
 deno.lock
 .env
-nodemon.json
 .idea
 .expo
 .env.local
