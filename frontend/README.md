@@ -35,7 +35,13 @@ In this application you can send messages to parents and receive forms from the 
     ```bash
     npm install
     ```
-2. To create a secret key type this in the terminal:
+2. Create .env.example file and rename it to .env.local.
+  
+      ```bash
+      cp .env.example .env.local
+      ```
+
+3. To create a secret key type this in the terminal:
   
     ```bash
     npm exec auth secret
