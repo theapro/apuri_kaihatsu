@@ -8,7 +8,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,9 +30,9 @@ import { SkeletonLoader } from "./TableApi";
 import useApiQuery from "@/lib/useApiQuery";
 
 export function GroupTable({
-  selectedGroups,
-  setSelectedGroups,
-}: {
+                             selectedGroups,
+                             setSelectedGroups,
+                           }: {
   selectedGroups: Group[];
   setSelectedGroups: React.Dispatch<React.SetStateAction<Group[]>>;
 }) {
@@ -44,15 +44,29 @@ export function GroupTable({
     `group/list?page=${page}&name=${searchName}`,
     ["groups", page, searchName]
   );
-  const [rowSelection, setRowSelection] = React.useState({});
-  const { data: selectedGroupData } = useQuery<{ groupList: Group[] }>({
-    queryKey: ["selectedGroups", rowSelection],
+
+  const selectedGroupIds = useMemo(
+    () => new Set(selectedGroups.map((group) => group.id.toString())),
+    [selectedGroups]
+  );
+
+  const rowSelection = useMemo(() => {
+    const selection: Record<string, boolean> = {};
+    selectedGroupIds.forEach((id) => {
+      selection[id] = true;
+    });
+    return selection;
+  }, [selectedGroupIds]);
+
+  const { data: selectedGroupData, refetch: refetchSelectedGroups } = useQuery<{
+    groupList: Group[];
+  }>({
+    queryKey: ["selectedGroups", Array.from(selectedGroupIds)],
     queryFn: async () => {
-      const groupIds = Object.keys(rowSelection).map((e) => Number(e));
-      if (groupIds.length === 0) {
+      if (selectedGroupIds.size === 0) {
         return { groupList: [] };
       }
-      const data = { groupIds };
+      const data = { groupIds: Array.from(selectedGroupIds) };
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/group/ids`,
         {
@@ -72,80 +86,96 @@ export function GroupTable({
 
       return response.json();
     },
-    enabled: !!session?.sessionToken,
+    enabled: !!session?.sessionToken && selectedGroupIds.size > 0,
   });
 
-  useEffect(() => {
-    if (selectedGroupData) {
-      setSelectedGroups(selectedGroupData.groupList);
-    }
-  }, [selectedGroupData, setSelectedGroups]);
-
-  const columns: ColumnDef<Group>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "name",
-      header: t("groupName"),
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("name")}</div>
-      ),
-    },
-    {
-      accessorKey: "member_count",
-      header: ({ column }) => (
-        <div className="capitalize">{t("studentCount")}</div>
-      ),
-      cell: ({ row }) => (
-        <div className="lowercase">{row.getValue("member_count")}</div>
-      ),
-    },
-  ];
+  const columns: ColumnDef<Group>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "name",
+        header: t("groupName"),
+        cell: ({ row }) => (
+          <div className="capitalize">{row.getValue("name")}</div>
+        ),
+      },
+      {
+        accessorKey: "member_count",
+        header: ({ column }) => (
+          <div className="capitalize">{t("studentCount")}</div>
+        ),
+        cell: ({ row }) => (
+          <div className="lowercase">{row.getValue("member_count")}</div>
+        ),
+      },
+    ],
+    [t]
+  );
 
   const table = useReactTable({
-    data: React.useMemo(() => data?.groups ?? [], [data]),
+    data: useMemo(() => data?.groups ?? [], [data]),
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      if (typeof updater === "function") {
+        const newSelection = updater(rowSelection);
+        const newSelectedGroups =
+          data?.groups.filter((group) => newSelection[group.id]) || [];
+        setSelectedGroups((prev) => {
+          const prevIds = new Set(prev.map((g) => g.id));
+          return [
+            ...prev.filter((g) => newSelection[g.id]),
+            ...newSelectedGroups.filter((g) => !prevIds.has(g.id)),
+          ];
+        });
+      }
+    },
     getRowId: (row) => row.id.toString(),
     state: {
       rowSelection,
     },
   });
 
-  useEffect(() => {
-    table.getRowModel().rows.forEach((row) => {
-      if (selectedGroups.find((group) => group.id === row.original.id)) {
-        row.toggleSelected(true);
-      } else {
-        row.toggleSelected(false);
-      }
-    });
-  }, [selectedGroups, table]);
+  const handleDeleteGroup = useCallback(
+    (group: Group) => {
+      setSelectedGroups((prev) => prev.filter((g) => g.id !== group.id));
+    },
+    [setSelectedGroups]
+  );
 
-  function handleDeleteGroup(group: Group) {
-    setSelectedGroups((prev) => prev.filter((g) => g.id !== group.id));
-  }
+  useEffect(() => {
+    if (selectedGroupData) {
+      setSelectedGroups((prevSelected) => {
+        const newSelectedMap = new Map(
+          selectedGroupData.groupList.map((g) => [g.id, g])
+        );
+        return prevSelected.map((g) => newSelectedMap.get(g.id) || g);
+      });
+    }
+  }, [selectedGroupData, setSelectedGroups]);
 
   return (
     <div className="w-full space-y-4 mt-4">
@@ -184,9 +214,9 @@ export function GroupTable({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
