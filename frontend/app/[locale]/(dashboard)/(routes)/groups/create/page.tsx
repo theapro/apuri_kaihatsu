@@ -85,7 +85,7 @@ export default function CreateGroup() {
         <Form {...form}>
           <form
             className="space-y-4"
-            onSubmit={form.handleSubmit((data) => mutate(data as any))}
+            onSubmit={form.handleSubmit((data) => mutate({...data, students: selectedStudents.map(student => student.id)} as any))}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <FormField
