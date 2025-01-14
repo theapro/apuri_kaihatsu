@@ -79,6 +79,24 @@ CREATE TABLE `GroupPost`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
+  
+CREATE TABLE `messages`
+(
+    `id`             int          NOT NULL AUTO_INCREMENT,
+    `sender_id`      int          NOT NULL,
+    `receiver_id`    int          NOT NULL,
+    `message`        text         NOT NULL,
+    `message_type`   enum('parent', 'student', 'admin') NOT NULL,  -- Kategoriyalar
+    `sent_at`        datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_messages_sender_id` (`sender_id`),
+    KEY `idx_messages_receiver_id` (`receiver_id`),
+    CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`sender_id`) REFERENCES `Parent` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `Student` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE `Parent`
 (

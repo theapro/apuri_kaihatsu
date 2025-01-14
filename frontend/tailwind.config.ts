@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss"
+import type { Config } from "tailwindcss";
 
 const config = {
   darkMode: ["class"],
@@ -7,7 +7,7 @@ const config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-	],
+  ],
   prefix: "",
   theme: {
     container: {
@@ -18,11 +18,10 @@ const config = {
       },
     },
     extend: {
-      fontFamily:{
+      fontFamily: {
         poppins: ["Poppins", "sans-serif"],
         montserrat: ["Montserrat", "sans-serif"],
       },
-      
       colors: {
         glass: "#a8ccd7",
         border: "hsl(var(--border))",
@@ -87,9 +86,18 @@ const config = {
           '100%': { transform: 'translateX(0)' },
         },
       },
+      // Scrollbar utiliti qo'shish
+      scrollbar: {
+        hide: {
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+          scrollbarWidth: 'none', /* Firefox uchun */
+        },
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config
+} satisfies Config;
 
-export default config
+export default config;

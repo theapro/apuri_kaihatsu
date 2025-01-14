@@ -27,7 +27,7 @@ import {
 import { DialogDescription } from "@radix-ui/react-dialog";
 import TableApi from "@/components/TableApi";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import useApiQuery from "@/lib/useApiQuery";
 import useApiMutation from "@/lib/useApiMutation";
@@ -38,14 +38,18 @@ export default function Info() {
   const tName = useTranslations("names");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [sortOption, setSortOption] = useState<string>("unsorted"); // Default sort option is "unsorted"
+  
   const { data } = useApiQuery<ParentApi>(
     `parent/list?page=${page}&name=${search}`,
     ["parents", page, search]
   );
+
   const pathName = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [parentId, setParentId] = useState<number | null>(null);
+  
   const { mutate } = useApiMutation<{ message: string }>(
     `parent/${parentId}`,
     "DELETE",
@@ -68,8 +72,8 @@ export default function Info() {
 
   const parentColumns: ColumnDef<Parent>[] = [
     {
-      accessorKey: "name",
-      header: t("parentName"),
+      accessorKey: "given_name", // Updated to 'given_name'
+      header: ("Name"),
       cell: ({ row }) => (
         <Link href={`/parents/${row.original.id}`}>
           {tName("name", { ...row?.original })}
@@ -147,42 +151,94 @@ export default function Info() {
     },
   ];
 
+  const [sortedParents, setSortedParents] = useState<Parent[]>([]);
+
+  useEffect(() => {
+    if (data?.parents?.length) {
+      let sorted = [...data.parents];
+
+      if (sortOption === "name") {
+        sorted.sort((a, b) => {
+          const givenNameA = a.given_name?.trim() || ""; // Use given_name
+          const givenNameB = b.given_name?.trim() || ""; // Use given_name
+
+          // Handle empty names properly
+          if (givenNameA === "" && givenNameB === "") return 0;
+          if (givenNameA === "") return 1;
+          if (givenNameB === "") return -1;
+
+          return givenNameA.localeCompare(givenNameB);
+        });
+      } else if (sortOption === "email") { 
+        sorted.sort((a, b) => {
+          const emailA = a.email?.trim() || ""; // Sort by email
+          const emailB = b.email?.trim() || ""; // Sort by email
+
+          // Handle empty emails properly
+          if (emailA === "" && emailB === "") return 0;
+          if (emailA === "") return 1;
+          if (emailB === "") return -1;
+
+          return emailA.localeCompare(emailB);
+        });
+      }
+
+      setSortedParents(sorted);
+    } else {
+      setSortedParents([]);
+    }
+  }, [data, sortOption]);
+
   return (
     <div className="w-full">
       <div className="space-y-4">
         <div className="w-full flex justify-between">
           <h1 className="text-3xl w-2/4 font-bold">{t("parents")}</h1>
-          <Link href={`${pathName}/create`}>
-            <Button>{t("createparent")}</Button>
-          </Link>
         </div>
-        <div className="flex justify-between">
-          <Input
-            placeholder={t("filter")}
-            onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="max-w-sm"
-          />
-          <div className="">
-            <PaginationApi data={data?.pagination ?? null} setPage={setPage} />
+
+        <div className="flex justify-between items-center w-full space-x-4">
+          <div className="flex items-center">
+            <Input
+              placeholder={t("filter")}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="max-w-sm h-10"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <select
+              onChange={(e) => setSortOption(e.target.value)}
+              value={sortOption}
+              className="h-10 text-sm border rounded-md px-3"
+            >
+              <option value="unsorted">{("Unsorted")}</option>
+              <option value="name">{("Sort by name")}</option>
+              <option value="email">{("Sort by email")}</option> {/* Sort by email */}
+            </select>
+            <Button
+              onClick={() => exportParents()}
+              size="sm"
+              variant="outline"
+              className="h-10 gap-1 text-sm"
+            >
+              <File className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only">Export</span>
+            </Button>
+            <Link href={`${pathName}/create`}>
+              <Button className="h-10">{t("createparent")}</Button>
+            </Link>
           </div>
         </div>
-        <div className="flex justify-end items-center">
-          <Button
-            onClick={() => exportParents()}
-            size="sm"
-            variant="outline"
-            className="h-7 gap-1 text-sm"
-          >
-            <File className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only">Export</span>
-          </Button>
-        </div>
+
         <Card x-chunk="dashboard-05-chunk-3">
-          <TableApi data={data?.parents ?? null} columns={parentColumns} />
+          <TableApi data={sortedParents} columns={parentColumns} />
         </Card>
+        <div>
+          <PaginationApi data={data?.pagination ?? null} setPage={setPage} />
+        </div>
       </div>
     </div>
   );

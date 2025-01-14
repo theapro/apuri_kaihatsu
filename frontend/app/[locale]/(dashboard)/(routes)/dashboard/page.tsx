@@ -158,74 +158,7 @@ export default function DashboardPage() {
       </div>
       
       {/* Statistic cards with chart */}
-      
-      <div className="font-poppins grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 2xl:grid-cols-3">
-        {statsData.map((data) => (
-          <Link key={data.id} href={data.href} passHref>
-            <Card className="w-full h-[245px] hover:border-white/70 duration-300 bg-glass/10">
-              <CardHeader className="p-3">
-                <CardTitle className="text-3xl font-medium break-words">
-                  {t(data.title)}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mb-2">{data.description}</p>
-              </CardHeader>
-              <CardFooter className="ml-[10px] flex flex-col items-start space-y-1 max-w-[150px] h-[150px] py-2 rounded-sm bg-white/10 border-white/20">
-                <div className="text-lg font-bold text-primary">Items: {data.count}</div>
-                {data.growthRate && (
-                  <p className="text-sm text-green-500">Growth: {data.growthRate}</p>
-                )}
-                {data.status && (
-                  <p
-                    className={`text-sm font-medium ${data.status === "Active" ? "text-green-500" : "text-red-500"
-                      }`}
-                  >
-                    Status: {data.status}
-                  </p>
-                )}
-                {data.lastUpdated && (
-                  <p className="text-xs text-muted-foreground">Last updated: {data.lastUpdated}</p>
-                )}
-
-                {/* Graphic settings*/}
-
-                {data.chartData && (
-                  <div style={{ marginTop: "-140px", marginLeft:"130px"}} className="flex justify-end w-[220px]  bg-white/10 rounded-sm border-white">
-                    <Bar
-                      data={{
-                        labels: ["January", "February", "March", "April"],
-                        datasets: [
-                          {
-                            label: "Statistics",
-                            data: data.chartData,
-                            backgroundColor: "rgba(75, 192, 192, 0.2)",
-                            borderColor: "rgba(75, 192, 192, 1)",
-                            borderWidth: 1,
-                          },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            position: "top",
-                          },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                          },
-                        },
-                      }}
-                    />
-                  </div>
-                )}
-              </CardFooter>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
+  
     </div>
   );
 }

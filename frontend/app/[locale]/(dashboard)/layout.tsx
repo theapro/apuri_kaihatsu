@@ -55,7 +55,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 sticky top-0 z-50">
+        <header className="flex h-14 items-center gap-4 border-b backdrop-blur-3xl bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-50">
           <Sheet>
             <SheetTrigger asChild>
               <Button

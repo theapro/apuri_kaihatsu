@@ -1,4 +1,5 @@
 import React from "react";
+import { IoChatboxOutline } from "react-icons/io5";
 import {
   Home,
   LineChart,
@@ -19,50 +20,56 @@ const navLinks = [
     id: 1,
     href: "/dashboard",
     icon: Home,
-    nameKey: "dashboard",
+    nameKey: "Dashboard",
   },
   {
     id: 2,
     href: "/forms",
     icon: BookCheck,
-    nameKey: "forms",
+    nameKey: "Forms",
     badge: 0,
   },
   {
     id: 3,
     href: "/permissions",
     icon: Users,
-    nameKey: "permissions",
+    nameKey: "Permissions",
   },
   {
     id: 4,
     href: "/messages",
     icon: MessageCircle,
-    nameKey: "messages",
+    nameKey: "Messages",
   },
   {
     id: 5,
     href: "/students",
     icon: GraduationCap,
-    nameKey: "students",
+    nameKey: "Students",
   },
   {
     id: 6,
     href: "/groups",
     icon: Users,
-    nameKey: "groups",
+    nameKey: "Groups",
   },
   {
     id: 7,
     href: "/parents",
     icon: Contact,
-    nameKey: "parents",
+    nameKey: "Parents",
   },
   {
     id: 8,
     href: "/admins",
     icon: ShieldCheck,
-    nameKey: "admins",
+    nameKey: "Admins",
+  },
+  {
+    id: 9,
+    href: "/chatpage",
+    icon: IoChatboxOutline,
+    nameKey: "Chats",
   },
   /* {
     id: 9,
@@ -86,7 +93,7 @@ const NavLinks = ({ user }: { user: User }) => {
             key={link.id}
             href={link.href}
             Icon={link.icon}
-            name={t(link.nameKey)}
+            name={(link.nameKey)}
             badge={link?.badge}
           />
         );

@@ -100,7 +100,7 @@ export default function EditParent({
                     <FormItem>
                       <FormLabel>{t("ParentName")}</FormLabel>
                       <FormControl>
-                        <Input
+                        <Input 
                           {...field}
                           placeholder={t("ParentName")}
                           type="text"
