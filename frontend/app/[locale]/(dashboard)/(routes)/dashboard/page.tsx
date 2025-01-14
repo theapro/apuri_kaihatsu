@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "@/navigation";
-import { Bar } from "react-chartjs-2"; // Chart.js Bar chart importi
+import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 
 // Chart.js konfiguratsiyasi
@@ -156,6 +156,7 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
+      
       {/* Statistic cards with chart */}
       
       <div className="font-poppins grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 2xl:grid-cols-3">
